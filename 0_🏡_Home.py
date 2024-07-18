@@ -13,7 +13,7 @@ import re
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from stqdm import stqdm
 from collections import Counter
-import streamlit_wordcloud as wordcloud
+# import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
 
 # data preparation 
@@ -439,13 +439,15 @@ with tab1:
             wc = staticWC(word_string, background)
             st.image(wc.to_array(), use_column_width=True)
         elif staticInteractive == "Interactive":
-            word_string = Prepcloudofword(lowerOrUpper)
-            words = word_string.split()
-            word_freq = Counter(words)
-            wordcloud_data = [dict(text=word, value=freq) for word, freq in word_freq.items()]
-            wordcloud.visualize(wordcloud_data, tooltip_data_fields={
-                        'text': 'word', 'value': 'freq'
-                    }, per_word_coloring=False, max_words=maks_kata, font_max=300)
+            st.markdown("""Mohon maaf, karena library ini sedang bermasalah, terpaksa fitur ini diberhentikan karena tidak compatible dengan library yang lain.
+                     Sebelumnya pada Lokal, fungsi ini cukup dapat digunakan walaupun masih ada bug. """)
+            # word_string = Prepcloudofword(lowerOrUpper)
+            # words = word_string.split()
+            # word_freq = Counter(words)
+            # wordcloud_data = [dict(text=word, value=freq) for word, freq in word_freq.items()]
+            # wordcloud.visualize(wordcloud_data, tooltip_data_fields={
+            #             'text': 'word', 'value': 'freq'
+            #         }, per_word_coloring=False, max_words=maks_kata, font_max=300)
     
     ## Contoh Sentiment Positive Negative
     st.header(f"Contoh Ulasan Bersentiment Positive VS Negative")
