@@ -11,3 +11,4 @@ tensorflow==2.12.0
 stqdm==0.0.5
 collections-extended==2.0.0
 numerize==0.12.0
+matplotlib==3.7.2
