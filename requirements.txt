@@ -7,10 +7,8 @@ altair
 wordcloud
 streamlit-option-menu
 keras
-regex
-tensorflow 
+pickle5
+tensorflow
 stqdm
-wordcloud
-numerize
 streamlit-wordcloud
-pip
+numerize
