@@ -13,4 +13,4 @@ stqdm
 wordcloud
 numerize
 streamlit-wordcloud
---upgrade pip
+pip
