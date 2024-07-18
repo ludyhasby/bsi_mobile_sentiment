@@ -10,5 +10,4 @@ keras==2.12.0
 tensorflow==2.12.0
 stqdm==0.0.5
 collections-extended==2.0.0
-streamlit-wordcloud==0.1.0
 numerize==0.12.0
