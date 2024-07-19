@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 import plotly.express as px
 import altair as alt
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from wordcloud import WordCloud, ImageColorGenerator
 from streamlit_option_menu import option_menu
 import keras
@@ -27,6 +27,8 @@ df["bulan"] = df["datetime_baru"].dt.month
 df["date_day"] = df["datetime_baru"].dt.day
 df["dayNames"] = df["datetime_baru"].dt.day_name()
 df["tanggal"] = df["datetime_baru"].dt.date
+bsi_date = date.fromisoformat('2021-02-01')
+df = df[df["tanggal"] >= bsi_date]
 df["tahun"] = df["datetime_baru"].dt.year
 minDate = min(df["tanggal"])
 maksDate = max(df["tanggal"])
@@ -35,7 +37,7 @@ maksDate = max(df["tanggal"])
 st.set_page_config(
     page_icon="💳",
     page_title="Sentiment BSI Mobile",
-    layout = "wide"
+    layout="wide"
 )
 # Use the following line to include your style.css file
 # st.markdown('<style>' + open('style.css').read() + '</style>', unsafe_allow_html=True)
@@ -465,3 +467,5 @@ with tab1:
         return ['background-color: #c5e4e2']*len(s) if s.sentiment =="positive" else ['background-color: #ff7f7f']*len(s)
     
     st.dataframe(ulasanTerbaru.style.apply(highlight_sentiment, axis=1))
+
+st.markdown("*Copyright © 2024 Ludy Hasby Aulia*")
