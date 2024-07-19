@@ -289,14 +289,15 @@ with tab1:
         fig = px.pie(sentiment, values='size', names='sentiment', color='sentiment', 
                     title=f'Distribusi Sentiment BSI Mobile {PERIOD}', 
                     color_discrete_map= {"negative": "#ff0000", "positive":"#3EA5A1"})
+        fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
-        st.write()
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Sentiment Pie Chart]</span>', unsafe_allow_html=True)
         st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 63,8%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
     with kol2:
         fig = px.pie(dist_score, values='jumlah', names='rating', color='rating', 
                     title=f'Distribusi Rating BSI Mobile {PERIOD}', 
-                    color_discrete_map= {"1": "#ff0000", "2": "#ff4c4c", "3":"#ff7f7f", "4":"#9ed2d0", "5":"#3EA5A1"})
+                    color_discrete_map= {"1": "#ff0000", "2": "#ff6666", "3":"#ff9999", "4":"#9ed2d0", "5":"#3EA5A1"})
+        fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Rating Pie Chart]</span>', unsafe_allow_html=True)
         st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 60,7%, sedangkan rating 4 sebesar 4,05% jika dijumlahkan menjadi 64,75%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
@@ -317,6 +318,17 @@ with tab1:
     st.plotly_chart(fig, theme="streamlit")
     
     # Stack Chart untuk antar tahun 
+    warna = [
+    '#1f77b4',  # muted blue
+    '#ff7f0e',  # safety orange
+    '#9467bd',  # muted purple
+    '#8c564b',  # chestnut brown
+    '#e377c2',  # raspberry yogurt pink
+    '#7f7f7f',  # middle gray
+    '#bcbd22',  # curry yellow-green
+    '#17becf',
+    # blue-teal
+]
     if "positive" in positiveNegative:
         st.subheader(f"Sentiment BSI Mobile antar tahun\n{PERIOD}")
         persentase_sentiment_bulan = df.groupby(['tahun', 'bulan', 'sentiment']).size().unstack(fill_value=0).reset_index()
@@ -326,7 +338,8 @@ with tab1:
             persentase_sentiment_bulan['positive'] = 0
         persentase_sentiment_bulan["persentase_positive"] = persentase_sentiment_bulan["positive"]/(persentase_sentiment_bulan["positive"]+persentase_sentiment_bulan["negative"])
         persentase_sentiment_bulan = persentase_sentiment_bulan.drop(["positive", "negative"], axis=1)
-        fig = px.line(persentase_sentiment_bulan, x='bulan', y='persentase_positive', color='tahun')
+        fig = px.line(persentase_sentiment_bulan, x='bulan', y='persentase_positive', 
+                        color='tahun', color_discrete_sequence=warna)
         st.plotly_chart(fig)
     
     st.subheader(f"Sentiment Positive VS Negative Antar Jam BSI Mobile\n{PERIOD}")
