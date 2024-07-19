@@ -34,7 +34,8 @@ maksDate = max(df["tanggal"])
 # page config
 st.set_page_config(
     page_icon="💳",
-    page_title="Sentiment on IOS"
+    page_title="Sentiment on IOS",
+    layout="wide"
 )
 # Use the following line to include your style.css file
 # st.markdown('<style>' + open('style.css').read() + '</style>', unsafe_allow_html=True)
