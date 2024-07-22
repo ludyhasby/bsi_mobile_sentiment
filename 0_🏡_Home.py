@@ -15,6 +15,7 @@ from stqdm import stqdm
 from collections import Counter
 # import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
+import json
 
 # data preparation 
 logo = Image.open("bsi.png")
@@ -220,7 +221,7 @@ with tab1:
             format='%b-%Y'  # Mengatur format label menjadi "bulan-tahun"
         ), title="Periode (Bulan-Tahun)"), 
         y = alt.Y('period_avg_rating:Q', title="Rerata Rating Periodik")
-    ).interactive()
+    )
 
     lines.configure_legend(
         strokeColor='red',
@@ -228,11 +229,15 @@ with tab1:
         padding=10,
         orient='bottom-left'
     )
-
-    avg_total = alt.Chart(coba).mark_rule(color="red").encode(
+    rerata = np.mean(df["score"])
+    avg_total = alt.Chart(pd.DataFrame({'y': [rerata]})).mark_rule(color="red").encode(
+    y='y:Q')
+    avg_periodic = alt.Chart(coba).mark_rule(color="blue").encode(
         y = alt.Y('mean(period_avg_rating):Q')
     )
-    st.altair_chart((lines+avg_total), use_container_width=True)
+    st.altair_chart((lines+avg_total+avg_periodic), use_container_width=True)
+    avg_per = np.mean(coba["period_avg_rating"])
+    st.write(f"Legenda: :green[rerata rating periodik], :red[rerata rating semua] ({rerata:.2f}), :blue[rerata rating semua periode] ({avg_per:.2f})")
 
     # rerata harian
     detail_on = st.toggle("Lihat Rerata Harian")
@@ -252,7 +257,7 @@ with tab1:
             orient='bottom-left'
         )
 
-        avg_total = alt.Chart(detail).mark_rule(color="red").encode(
+        avg_total = alt.Chart(detail).mark_rule(color="blue").encode(
             y = 'mean(daily_avg_rating):Q'
         )
         st.altair_chart((lines+avg_total), use_container_width=True)
@@ -274,7 +279,7 @@ with tab1:
         st.plotly_chart(fig, theme="streamlit")
         st.write()
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Sentiment Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 64,5%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
+        st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 66%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
     with kol2:
         fig = px.pie(dist_score, values='jumlah', names='rating', color='rating', 
                     title=f'Distribusi Rating BSI Mobile {PERIOD}', 
@@ -283,7 +288,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Rating Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 61,6%, sedangkan rating 4 sebesar 3,71% jika dijumlahkan menjadi 65,31%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
+        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 63,8%, sedangkan rating 4 sebesar 3,24% jika dijumlahkan menjadi 66,54%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
 
     st.subheader("Sentiment BSI Mobile in Time Series")
     sentiment_bulan = df.groupby(['tahun_bulan_01', 'sentiment']).size().unstack(fill_value=0).reset_index()
@@ -299,6 +304,28 @@ with tab1:
              color="Sentiment",
              barmode = 'group', color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
     st.plotly_chart(fig, theme="streamlit")
+    web_scrap = st.selectbox(label="Web Scrapping Kulminasi Sentiment", 
+                             options=["Desember 2023", "Mei 2023"])
+    if web_scrap == "Desember 2023":
+        st.markdown(":green[Web Scrap BSI Desember 2023]")
+        with open('bsi_desember_2023.json', 'rb') as f:
+            vocab = json.load(f)
+        organic_results = vocab.get('organic_results', [])
+        or_df = pd.DataFrame(organic_results, columns=["date", "description", "displayed_link", 
+                                                                    "domain", "link", "rating", 
+                                                                    "summary", 
+                                                                    "title"])[["title", "description", "link"]]
+        st.dataframe(or_df)
+    else:
+        st.markdown(":red[Web Scrap BSI Mei 2023]")
+        with open('bsi_mei_2023.json', 'rb') as f:
+            vocab = json.load(f)
+        organic_results = vocab.get('organic_results', [])
+        or_df = pd.DataFrame(organic_results, columns=["date", "description", "displayed_link", 
+                                                                    "domain", "link", "rating", 
+                                                                    "summary", 
+                                                                    "title"])[["title", "description", "link"]]
+        st.dataframe(or_df)
     
     # Stack Chart untuk antar tahun 
     warna = [
@@ -399,7 +426,7 @@ with tab1:
     version = pd.read_csv("version.csv")
     col1, col2= st.columns(2)
     with col1:
-        versi_selection1 = st.selectbox("Versi Aplikasi", options=version.reviewCreatedVersion.unique(), index=0)
+        versi_selection1 = st.selectbox("Versi Aplikasi", options=sorted(version.reviewCreatedVersion.unique()), index=0)
         version_1 = version[version["reviewCreatedVersion"]==versi_selection1]
         version_1 = version_1.groupby(["sentiment"]).size().reset_index()
         version_1.columns = ["sentiment", "size"]
@@ -409,7 +436,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
     with col2:
-        versi_selection2 = st.selectbox("Versi Aplikasi", options=version.reviewCreatedVersion.unique(), index=1)
+        versi_selection2 = st.selectbox("Versi Aplikasi", options=sorted(version.reviewCreatedVersion.unique()), index=1)
         version_2 = version[version["reviewCreatedVersion"]==versi_selection2]
         version_2 = version_2.groupby(["sentiment"]).size().reset_index()
         version_2.columns = ["sentiment", "size"]
@@ -668,6 +695,7 @@ with tab3:
             st.markdown("""
                         - BSI Data Analytics Departement (lead by Bapak Denny Setiawan), Specially for Digital Team (lead by Mbak Ida)\n
                         - [Google Play Scraper](https://github.com/JoMingyu/google-play-scraper)
+                        - [Zenrows](https://www.zenrows.com/)
                         """)
           
             st.subheader("Info Update", divider='red')

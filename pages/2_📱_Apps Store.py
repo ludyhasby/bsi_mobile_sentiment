@@ -7,14 +7,12 @@ import altair as alt
 from datetime import date, timedelta
 from wordcloud import WordCloud, ImageColorGenerator
 from streamlit_option_menu import option_menu
-import keras
-import pickle
-import re
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from stqdm import stqdm
 from collections import Counter
 # import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
+import json
 
 # data preparation 
 logo = Image.open("bsi.png")
@@ -51,8 +49,9 @@ def social_icons(width=24, height=24, **kwargs):
         icons_html = ""
         for name, url in kwargs.items():
             icon_src = {
-                "gmaps": "https://img.icons8.com/ios-filled/100/ff8c00/google-maps.png",
-                "email": "https://cdn-icons-png.flaticon.com/512/561/561127.png"
+                "linkedin": "https://img.icons8.com/ios-filled/100/ff8c00/linkedin.png",
+                "github": "https://img.icons8.com/ios-filled/100/ff8c00/github--v2.png",
+                "email": "https://img.icons8.com/ios-filled/100/ff8c00/filled-message.png"
             }.get(name.lower())
 
             if icon_src:
@@ -88,6 +87,7 @@ with st.sidebar:
                          "Sentiment Positive VS Negative Antar Bulan", 
                          "Sentiment Positive VS Negative Antar Tanggal", 
                          "Sentiment Positive VS Negative Antar Hari", 
+                         "Perbandingan Sentiment Ulasan yang di Edit dengan Tidak",
                          "WordCloud Generator",
                          "Contoh Ulasan Bersentiment"],
                         icons = ['bi bi-bar-chart-fill', 
@@ -99,6 +99,7 @@ with st.sidebar:
                                     'bi bi-calendar-month', 
                                     'bi bi-calendar-date-fill', 
                                     'bi bi-calendar-day', 
+                                    'bi bi-pencil-square',
                                     'bi bi-cloud-haze-fill',
                                     'bi bi-chat-left-dots'],
                         menu_icon="mortadboard",
@@ -241,7 +242,7 @@ with tab1:
             format='%b-%Y'  # Mengatur format label menjadi "bulan-tahun"
         ), title="Periode (Bulan-Tahun)"), 
         y = alt.Y('period_avg_rating:Q', title="Rerata Rating Periodik")
-    ).interactive()
+    )
 
     lines.configure_legend(
         strokeColor='red',
@@ -249,11 +250,15 @@ with tab1:
         padding=10,
         orient='bottom-left'
     )
-
-    avg_total = alt.Chart(coba).mark_rule(color="red").encode(
+    rerata = np.mean(df["score"])
+    avg_total = alt.Chart(pd.DataFrame({'y': [rerata]})).mark_rule(color="red").encode(
+    y='y:Q')
+    avg_periodic = alt.Chart(coba).mark_rule(color="blue").encode(
         y = alt.Y('mean(period_avg_rating):Q')
     )
-    st.altair_chart((lines+avg_total), use_container_width=True)
+    st.altair_chart((lines+avg_total+avg_periodic), use_container_width=True)
+    avg_per = np.mean(coba["period_avg_rating"])
+    st.write(f"Legenda: :green[rerata rating periodik], :red[rerata rating semua] ({rerata:.2f}), :blue[rerata rating semua periode] ({avg_per:.2f})")
 
     # rerata harian
     detail_on = st.toggle("Lihat Rerata Harian")
@@ -273,10 +278,11 @@ with tab1:
             orient='bottom-left'
         )
 
-        avg_total = alt.Chart(detail).mark_rule(color="red").encode(
+        avg_total = alt.Chart(detail).mark_rule(color="blue").encode(
             y = 'mean(daily_avg_rating):Q'
         )
         st.altair_chart((lines+avg_total), use_container_width=True)
+        
 
 
     ## Sentiment
@@ -292,7 +298,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Sentiment Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 63,8%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
+        st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 74,8%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
     with kol2:
         fig = px.pie(dist_score, values='jumlah', names='rating', color='rating', 
                     title=f'Distribusi Rating BSI Mobile {PERIOD}', 
@@ -300,7 +306,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Rating Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 60,7%, sedangkan rating 4 sebesar 4,05% jika dijumlahkan menjadi 64,75%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
+        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 73,4%, sedangkan rating 4 sebesar 2,79% jika dijumlahkan menjadi 76,2%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
 
     st.subheader("Sentiment BSI Mobile in Time Series")
     sentiment_bulan = df.groupby(['tahun_bulan_01', 'sentiment']).size().unstack(fill_value=0).reset_index()
@@ -317,6 +323,29 @@ with tab1:
              barmode = 'group', color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
     st.plotly_chart(fig, theme="streamlit")
     
+    web_scrap = st.selectbox(label="Web Scrapping Kulminasi Sentiment", 
+                             options=["April 2023", "Maret 2024"])
+    if web_scrap == "April 2023":
+        st.markdown(":green[Web Scrap BSI April 2023]")
+        with open('bsi_april_2023.json', 'rb') as f:
+            vocab = json.load(f)
+        organic_results = vocab.get('organic_results', [])
+        or_df = pd.DataFrame(organic_results, columns=["date", "description", "displayed_link", 
+                                                                    "domain", "link", "rating", 
+                                                                    "summary", 
+                                                                    "title"])[["title", "description", "link"]]
+        st.dataframe(or_df)
+    else:
+        st.markdown(":red[Web Scrap BSI Maret 2024]")
+        with open('bsi_maret_2024.json', 'rb') as f:
+            vocab = json.load(f)
+        organic_results = vocab.get('organic_results', [])
+        or_df = pd.DataFrame(organic_results, columns=["date", "description", "displayed_link", 
+                                                                    "domain", "link", "rating", 
+                                                                    "summary", 
+                                                                    "title"])[["title", "description", "link"]]
+        st.dataframe(or_df)
+
     # Stack Chart untuk antar tahun 
     warna = [
     '#1f77b4',  # muted blue
@@ -356,7 +385,7 @@ with tab1:
         st.plotly_chart(fig, theme="streamlit")
     with col2:
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Hourly Sentiment Chart]</span>', unsafe_allow_html=True)
-        st.write("Reviewer cenderung memberikan ulasan pada pagi hingga siang hari dengan titik tertinggi pada jam 4 pagi. Dimana saat itu, didominasi dengan ulasan ber-sentiment positif. Sedangkan pada sentiment negatif, reviewer juga memberikan ulasannya kebanyakan pada pukul 4-6 pagi. Memungkinkan BSI Mobile memiliki banyak masalah saat digunakan pada rentang waktu tersebut")
+        st.write("Reviewer cenderung memberikan ulasan pada pagi hingga siang hari dengan titik tertinggi pada jam 4 pagi. Dimana saat itu, didominasi dengan ulasan ber-sentiment positif. Sedangkan pada sentiment negatif, reviewer juga memberikan ulasannya kebanyakan pada pukul 2-8 pagi. Memungkinkan BSI Mobile memiliki banyak masalah saat digunakan pada rentang waktu tersebut")
 
     st.subheader(f"Sentiment Positive VS Negative Antar Bulan BSI Mobile\n{PERIOD}")
     col1, col2 = st.columns((5, 1))
@@ -411,6 +440,31 @@ with tab1:
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Daily Sentiment Chart]</span>', unsafe_allow_html=True)
         st.write("Ulasan dengan :green[sentiment positive] banyak diberikan pada Hari Kerja / Weekdays (Senin-Jumat) sedangkan ulasan dengan :[sentiment negative] cenderung fluktuatif dengan titik tinggi pada hari Senin dan Sabtu.")
 
+    ## Comparison Is Edit 
+    st.header("Perbandingan Ulasan Yang di Edit")
+    df_edit = df[df["isEdited"]==True]
+    df_tidak_edit = df[df["isEdited"]==False]
+
+    col1, col2 = st.columns(2)
+    with col1:
+        sentiment_edit = df_edit.groupby(["sentiment"]).size().reset_index()
+        sentiment_edit.columns = ["sentiment", "size"]
+        fig = px.pie(sentiment_edit, values='size', names='sentiment', color='sentiment', 
+                        title=f'Distribusi Sentiment Yang Di Edit {PERIOD}', 
+                        color_discrete_map= {"negative": "#ff0000", "positive":"#3EA5A1"})
+        fig.update_traces(textfont=dict(color="black"))
+        st.plotly_chart(fig, theme="streamlit")
+    with col2:
+        sentiment_no_edit = df_tidak_edit.groupby(["sentiment"]).size().reset_index()
+        sentiment_no_edit.columns = ["sentiment", "size"]
+        fig = px.pie(sentiment_no_edit, values='size', names='sentiment', color='sentiment', 
+                        title=f'Distribusi Sentiment Yang Tidak di Edit {PERIOD}', 
+                        color_discrete_map= {"negative": "#ff0000", "positive":"#3EA5A1"})
+        fig.update_traces(textfont=dict(color="black"))
+        st.plotly_chart(fig, theme="streamlit")
+    
+    st.markdown(f'<span style="font-size: 18px;">:blue[Insight Perbandingan Edit]</span>', unsafe_allow_html=True)
+    st.write("Ulasan yang di edit terlihat memiliki persentase sentiment positif yang lebih kecil dibandingkan dengan ulasan yang tanpa di edit, yaitu 63,8% dibanding 75,3% hal itu mengingindasikan pemberi ulasan kurang puas terhadap BSI Mobile dibandingkan ulasan pertama yang diberikan pada Apps Store.")
 
     ## Wordcloud
     st.header("WordCloud BSI Mobile pada IOS")
