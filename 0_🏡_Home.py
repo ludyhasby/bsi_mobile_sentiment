@@ -20,9 +20,9 @@ import json
 # data preparation 
 logo = Image.open("bsi.png")
 
-df1 = pd.read_csv("dataset_siap_eksplorasi_2.csv")
+df1 = pd.read_csv("dataset_siap_eksplorasi.csv")
 df1["sumber"] = "ps"
-df2 = pd.read_csv("ios_processing_2.csv")
+df2 = pd.read_csv("ios_processing.csv")
 df2["sumber"] = "as"
 df = pd.concat([df1, df2])
 df["datetime_baru"] = pd.to_datetime(df["datetime_baru"])

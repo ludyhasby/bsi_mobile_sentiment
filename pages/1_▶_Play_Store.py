@@ -17,7 +17,7 @@ import json
 
 # data preparation 
 logo = Image.open("bsi.png")
-df = pd.read_csv("dataset_siap_eksplorasi_2.csv")
+df = pd.read_csv("dataset_siap_eksplorasi.csv")
 df["datetime_baru"] = pd.to_datetime(df["datetime_baru"])
 df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
 df["jam"] = df["datetime_baru"].dt.hour
