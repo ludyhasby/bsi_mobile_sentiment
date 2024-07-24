@@ -33,7 +33,7 @@ maksDate = max(df["tanggal"])
 
 # page config
 st.set_page_config(
-    page_icon="💳",
+    page_icon="📱",
     page_title="Sentiment on IOS",
     layout="wide"
 )
