@@ -68,10 +68,13 @@ def cariKata(kolom_list, key):
 
 # data preparation 
 logo = Image.open("bsi.png")
-with open('lda_model.pkl', 'rb') as handle:
-    lda = pickle.load(handle)
-with open('cv.pkl', 'rb') as cv_file:
-    cv = pickle.load(cv_file)
+lda = pd.read_pickle("lda_model.pkl")
+cv = pd.read_pickle("cv.pkl")
+
+# with open('lda_model.pkl', 'rb') as handle:
+#     lda = pickle.load(handle)
+# with open('cv.pkl', 'rb') as cv_file:
+#     cv = pickle.load(cv_file)
 
 df1 = pd.read_csv("dataset_siap_eksplorasi.csv")
 df1["sumber"] = "ps"
