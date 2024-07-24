@@ -20,9 +20,9 @@ import json
 # data preparation 
 logo = Image.open("bsi.png")
 
-df1 = pd.read_csv("dataset_siap_eksplorasi.csv")
+df1 = pd.read_csv("dataset_siap_eksplorasi_2.csv")
 df1["sumber"] = "ps"
-df2 = pd.read_csv("ios_processing.csv")
+df2 = pd.read_csv("ios_processing_2.csv")
 df2["sumber"] = "as"
 df = pd.concat([df1, df2])
 df["datetime_baru"] = pd.to_datetime(df["datetime_baru"])
@@ -288,7 +288,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Rating Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 63,8%, sedangkan rating 4 sebesar 3,24% jika dijumlahkan menjadi 66,54%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
+        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 63,3%, sedangkan rating 4 sebesar 3,24% jika dijumlahkan menjadi 66,54%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
 
     st.subheader("Sentiment BSI Mobile in Time Series")
     sentiment_bulan = df.groupby(['tahun_bulan_01', 'sentiment']).size().unstack(fill_value=0).reset_index()
@@ -424,6 +424,10 @@ with tab1:
   ## Version Exploration
     st.header("Sentiment Berdasar Versi Apps [Hanya Play Store]")
     version = pd.read_csv("version.csv")
+    version["at"] = pd.to_datetime(version["at"])
+    bsi_date = date.fromisoformat('2021-02-01')
+    version = version[version["at"].dt.date >= bsi_date]
+
     col1, col2= st.columns(2)
     with col1:
         versi_selection1 = st.selectbox("Versi Aplikasi", options=sorted(version.reviewCreatedVersion.unique()), index=0)
