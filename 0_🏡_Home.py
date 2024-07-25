@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 import plotly.express as px
 import altair as alt
-from datetime import timedelta
+from datetime import timedelta, date
 from wordcloud import WordCloud
 from streamlit_option_menu import option_menu
 import keras
@@ -13,7 +13,7 @@ import re
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from stqdm import stqdm
 from collections import Counter
-import streamlit_wordcloud as wordcloud
+# import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
 
 # data preparation 
@@ -31,6 +31,9 @@ df["bulan"] = df["datetime_baru"].dt.month
 df["date_day"] = df["datetime_baru"].dt.day
 df["dayNames"] = df["datetime_baru"].dt.day_name()
 df["tanggal"] = df["datetime_baru"].dt.date
+bsi_date = date.fromisoformat('2021-02-01')
+df = df[df["tanggal"] >= bsi_date]
+
 df["tahun"] = df["datetime_baru"].dt.year
 minDate = min(df["tanggal"])
 maksDate = max(df["tanggal"])
@@ -265,6 +268,9 @@ with tab1:
         fig = px.pie(sentiment, values='size', names='sentiment', color='sentiment', 
                     title=f'Distribusi Sentiment BSI Mobile {PERIOD}', 
                     color_discrete_map= {"negative": "#ff0000", "positive":"#3EA5A1"})
+        
+        fig.update_traces(textfont=dict(color="black"))
+
         st.plotly_chart(fig, theme="streamlit")
         st.write()
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Sentiment Pie Chart]</span>', unsafe_allow_html=True)
@@ -272,7 +278,9 @@ with tab1:
     with kol2:
         fig = px.pie(dist_score, values='jumlah', names='rating', color='rating', 
                     title=f'Distribusi Rating BSI Mobile {PERIOD}', 
-                    color_discrete_map= {"1": "#ff0000", "2": "#ff4c4c", "3":"#ff7f7f", "4":"#9ed2d0", "5":"#3EA5A1"})
+                    color_discrete_map= {"1": "#ff0000", "2": "#ff6666", "3":"#ff9999", "4":"#9ed2d0", "5":"#3EA5A1"})
+
+        fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Rating Pie Chart]</span>', unsafe_allow_html=True)
         st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 61,6%, sedangkan rating 4 sebesar 3,71% jika dijumlahkan menjadi 65,31%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
@@ -293,6 +301,17 @@ with tab1:
     st.plotly_chart(fig, theme="streamlit")
     
     # Stack Chart untuk antar tahun 
+    warna = [
+    '#1f77b4',  # muted blue
+    '#ff7f0e',  # safety orange
+    '#9467bd',  # muted purple
+    '#8c564b',  # chestnut brown
+    '#e377c2',  # raspberry yogurt pink
+    '#7f7f7f',  # middle gray
+    '#bcbd22',  # curry yellow-green
+    '#17becf',
+    # blue-teal
+]
     if "positive" in positiveNegative:
         st.subheader(f"Sentiment BSI Mobile antar tahun\n{PERIOD}")
         persentase_sentiment_bulan = df.groupby(['tahun', 'bulan', 'sentiment']).size().unstack(fill_value=0).reset_index()
@@ -302,7 +321,8 @@ with tab1:
             persentase_sentiment_bulan['positive'] = 0
         persentase_sentiment_bulan["persentase_positive"] = persentase_sentiment_bulan["positive"]/(persentase_sentiment_bulan["positive"]+persentase_sentiment_bulan["negative"])
         persentase_sentiment_bulan = persentase_sentiment_bulan.drop(["positive", "negative"], axis=1)
-        fig = px.line(persentase_sentiment_bulan, x='bulan', y='persentase_positive', color='tahun')
+        fig = px.line(persentase_sentiment_bulan, x='bulan', y='persentase_positive', 
+                        color='tahun', color_discrete_sequence=warna)
         st.plotly_chart(fig)
     
     st.subheader(f"Sentiment Positive VS Negative Antar Jam BSI Mobile\n{PERIOD}")
@@ -386,8 +406,8 @@ with tab1:
         fig = px.pie(version_1, values='size', names='sentiment', color='sentiment', 
                     title=f'Distribusi Sentiment BSI Mobile {versi_selection1}', 
                     color_discrete_map= {"negative": "#ff0000", "positive":"#3EA5A1"})
+        fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
-        st.write()
     with col2:
         versi_selection2 = st.selectbox("Versi Aplikasi", options=version.reviewCreatedVersion.unique(), index=1)
         version_2 = version[version["reviewCreatedVersion"]==versi_selection2]
@@ -396,6 +416,7 @@ with tab1:
         fig = px.pie(version_2, values='size', names='sentiment', color='sentiment', 
                     title=f'Distribusi Sentiment BSI Mobile {versi_selection2}', 
                     color_discrete_map= {"negative": "#ff0000", "positive":"#3EA5A1"})
+        fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
     
     st.markdown(f'<span style="font-size: 18px;">:green[Insight Sentiment Version of Mobile Apps]</span>', unsafe_allow_html=True)
@@ -439,13 +460,15 @@ with tab1:
             wc = staticWC(word_string, background)
             st.image(wc.to_array(), use_column_width=True)
         elif staticInteractive == "Interactive":
-            word_string = Prepcloudofword(lowerOrUpper)
-            words = word_string.split()
-            word_freq = Counter(words)
-            wordcloud_data = [dict(text=word, value=freq) for word, freq in word_freq.items()]
-            wordcloud.visualize(wordcloud_data, tooltip_data_fields={
-                        'text': 'word', 'value': 'freq'
-                    }, per_word_coloring=False, max_words=maks_kata, font_max=300)
+            st.markdown("""Mohon maaf, karena library ini sedang bermasalah, terpaksa fitur ini diberhentikan karena tidak compatible dengan library yang lain.
+                     Sebelumnya pada Lokal, fungsi ini cukup dapat digunakan walaupun masih ada bug. """)
+            # word_string = Prepcloudofword(lowerOrUpper)
+            # words = word_string.split()
+            # word_freq = Counter(words)
+            # wordcloud_data = [dict(text=word, value=freq) for word, freq in word_freq.items()]
+            # wordcloud.visualize(wordcloud_data, tooltip_data_fields={
+            #             'text': 'word', 'value': 'freq'
+            #         }, per_word_coloring=False, max_words=maks_kata, font_max=300)
     
     ## Contoh Sentiment Positive Negative
     st.header(f"Contoh Ulasan Bersentiment Positive VS Negative")
@@ -471,7 +494,7 @@ with tab1:
             st.dataframe(negative_styled)
     st.subheader("Ulasan Terbaru")
     st.write(f"pada {PERIOD}")
-    ulasanTerbaru = df.sort_values(by = "datetime_baru", ascending=False)[["datetime_baru", "Sentences", "sentiment"]].head(10)
+    ulasanTerbaru = df.sort_values(by = "datetime_baru", ascending=False)[["datetime_baru", "Sentences", "sentiment"]].head(10).reset_index(drop=True)
     ulasanTerbaru.columns = ["timestamp", "ulasan", "sentiment"]
     def highlight_sentiment(s):
         return ['background-color: #c5e4e2']*len(s) if s.sentiment =="positive" else ['background-color: #ff7f7f']*len(s)
@@ -662,4 +685,5 @@ with tab3:
             st.markdown(
                 social_icons(32, 32, LinkedIn=linkedin_url, GitHub=github_url, Email=email_url),
                 unsafe_allow_html=True)
-            st.markdown("")
+
+st.markdown("*Copyright © 2024 Ludy Hasby Aulia*")
