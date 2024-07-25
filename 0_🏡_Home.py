@@ -616,10 +616,11 @@ with tab2:
 with tab3:
     ## load model dan preprocessing dan sebagainya 
     # load model
-    model = keras.models.load_model("sentiment_5.h5")
-    # tokenizer preprocessing
-    with open('tokenizer.pickle', 'rb') as handle:
-        tokenizer = pickle.load(handle)
+    try:
+        model = keras.models.load_model("sentiment_5.h5")
+        # tokenizer preprocessing
+        with open('tokenizer.pickle', 'rb') as handle:
+            tokenizer = pickle.load(handle)
     max_length = 120
     trunc_type='post'
     pad_type='post'
