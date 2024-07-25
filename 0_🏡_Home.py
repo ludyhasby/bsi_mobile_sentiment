@@ -621,6 +621,8 @@ with tab3:
         # tokenizer preprocessing
         with open('tokenizer.pickle', 'rb') as handle:
             tokenizer = pickle.load(handle)
+    except:
+        return st.write("Maaf sedang dalam perbaikan")
     max_length = 120
     trunc_type='post'
     pad_type='post'
