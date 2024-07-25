@@ -15,6 +15,7 @@ from stqdm import stqdm
 from collections import Counter
 # import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
+import json
 
 # data preparation 
 logo = Image.open("bsi.png")
@@ -141,7 +142,10 @@ with st.sidebar:
             """
             st.markdown(js, unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["Eksplorasi Sentiment Result🌍", "Custome Prediction Tools✅", "Credits Training - Contact👋"])
+tab1, tab2, tab3, tab4 = st.tabs(["Eksplorasi Sentiment Result🌍",
+                            "Perbandingan Performa🏦", 
+                            "Custome Prediction Tools✅", 
+                            "Credits Training - Contact👋"])
 with tab1:
     ## Filter 
     st.write("Seleksi Filter, silahkan dipilih range waktu yang diinginkan")
@@ -220,7 +224,7 @@ with tab1:
             format='%b-%Y'  # Mengatur format label menjadi "bulan-tahun"
         ), title="Periode (Bulan-Tahun)"), 
         y = alt.Y('period_avg_rating:Q', title="Rerata Rating Periodik")
-    ).interactive()
+    )
 
     lines.configure_legend(
         strokeColor='red',
@@ -228,11 +232,15 @@ with tab1:
         padding=10,
         orient='bottom-left'
     )
-
-    avg_total = alt.Chart(coba).mark_rule(color="red").encode(
+    rerata = np.mean(df["score"])
+    avg_total = alt.Chart(pd.DataFrame({'y': [rerata]})).mark_rule(color="red").encode(
+    y='y:Q')
+    avg_periodic = alt.Chart(coba).mark_rule(color="blue").encode(
         y = alt.Y('mean(period_avg_rating):Q')
     )
-    st.altair_chart((lines+avg_total), use_container_width=True)
+    st.altair_chart((lines+avg_total+avg_periodic), use_container_width=True)
+    avg_per = np.mean(coba["period_avg_rating"])
+    st.write(f"Legenda: :green[rerata rating periodik], :red[rerata rating semua] ({rerata:.2f}), :blue[rerata rating semua periode] ({avg_per:.2f})")
 
     # rerata harian
     detail_on = st.toggle("Lihat Rerata Harian")
@@ -252,7 +260,7 @@ with tab1:
             orient='bottom-left'
         )
 
-        avg_total = alt.Chart(detail).mark_rule(color="red").encode(
+        avg_total = alt.Chart(detail).mark_rule(color="blue").encode(
             y = 'mean(daily_avg_rating):Q'
         )
         st.altair_chart((lines+avg_total), use_container_width=True)
@@ -274,7 +282,7 @@ with tab1:
         st.plotly_chart(fig, theme="streamlit")
         st.write()
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Sentiment Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 64,5%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
+        st.write("Ulasan BSI Mobile di dominasi oleh ulasan dengan sentiment positive sebesar 66%. Silahkan lakukan filter tanggal untuk melihat distribusi pada range waktu yang ditentukan.")
     with kol2:
         fig = px.pie(dist_score, values='jumlah', names='rating', color='rating', 
                     title=f'Distribusi Rating BSI Mobile {PERIOD}', 
@@ -283,7 +291,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Rating Pie Chart]</span>', unsafe_allow_html=True)
-        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 61,6%, sedangkan rating 4 sebesar 3,71% jika dijumlahkan menjadi 65,31%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
+        st.write("Rating BSI Mobile didominasi dengan rating 5 sebesar 63,3%, sedangkan rating 4 sebesar 3,24% jika dijumlahkan menjadi 66,54%. Jika diasumsikan rating 5 dan 4 cenderung positif, ini sangat mirip dengan hasil analisis sentiment dengan distribusi yang hampir mirip.")
 
     st.subheader("Sentiment BSI Mobile in Time Series")
     sentiment_bulan = df.groupby(['tahun_bulan_01', 'sentiment']).size().unstack(fill_value=0).reset_index()
@@ -299,6 +307,28 @@ with tab1:
              color="Sentiment",
              barmode = 'group', color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
     st.plotly_chart(fig, theme="streamlit")
+    web_scrap = st.selectbox(label="Web Scrapping Kulminasi Sentiment", 
+                             options=["Desember 2023", "Mei 2023"])
+    if web_scrap == "Desember 2023":
+        st.markdown(":green[Web Scrap BSI Desember 2023]")
+        with open('bsi_desember_2023.json', 'rb') as f:
+            vocab = json.load(f)
+        organic_results = vocab.get('organic_results', [])
+        or_df = pd.DataFrame(organic_results, columns=["date", "description", "displayed_link", 
+                                                                    "domain", "link", "rating", 
+                                                                    "summary", 
+                                                                    "title"])[["title", "description", "link"]]
+        st.dataframe(or_df)
+    else:
+        st.markdown(":red[Web Scrap BSI Mei 2023]")
+        with open('bsi_mei_2023.json', 'rb') as f:
+            vocab = json.load(f)
+        organic_results = vocab.get('organic_results', [])
+        or_df = pd.DataFrame(organic_results, columns=["date", "description", "displayed_link", 
+                                                                    "domain", "link", "rating", 
+                                                                    "summary", 
+                                                                    "title"])[["title", "description", "link"]]
+        st.dataframe(or_df)
     
     # Stack Chart untuk antar tahun 
     warna = [
@@ -397,9 +427,11 @@ with tab1:
   ## Version Exploration
     st.header("Sentiment Berdasar Versi Apps [Hanya Play Store]")
     version = pd.read_csv("version.csv")
+    version["at"] = pd.to_datetime(version["at"])
+    version = version[(version["at"].dt.date >= bsi_date) & (version['reviewCreatedVersion']!='5.1.28')]
     col1, col2= st.columns(2)
     with col1:
-        versi_selection1 = st.selectbox("Versi Aplikasi", options=version.reviewCreatedVersion.unique(), index=0)
+        versi_selection1 = st.selectbox("Versi Aplikasi", options=sorted(version.reviewCreatedVersion.unique()), index=0)
         version_1 = version[version["reviewCreatedVersion"]==versi_selection1]
         version_1 = version_1.groupby(["sentiment"]).size().reset_index()
         version_1.columns = ["sentiment", "size"]
@@ -409,7 +441,7 @@ with tab1:
         fig.update_traces(textfont=dict(color="black"))
         st.plotly_chart(fig, theme="streamlit")
     with col2:
-        versi_selection2 = st.selectbox("Versi Aplikasi", options=version.reviewCreatedVersion.unique(), index=1)
+        versi_selection2 = st.selectbox("Versi Aplikasi", options=sorted(version.reviewCreatedVersion.unique()), index=1)
         version_2 = version[version["reviewCreatedVersion"]==versi_selection2]
         version_2 = version_2.groupby(["sentiment"]).size().reset_index()
         version_2.columns = ["sentiment", "size"]
@@ -502,6 +534,86 @@ with tab1:
     st.dataframe(ulasanTerbaru.style.apply(highlight_sentiment, axis=1))
 
 with tab2:
+    st.header("Perbandingan Performa Ulasan BSI dengan Bank Lainnya pada Play Store")
+    bb = pd.read_csv("bank_terbesar_terpilih.csv")
+    bb = bb[["developer", "nama_aplikasi", 'jumlah_terinstall', 'banyak_rating', 'banyak_pengulas', 'rerata_rating']]
+    bs = pd.read_csv("bank_syariah_terpilih.csv")
+    bs = bs[["developer", "nama_aplikasi", 'jumlah_terinstall', 'banyak_rating', 'banyak_pengulas', 'rerata_rating']]
+
+    ### bank terbesar
+    st.subheader("Ulasan BSI dibandingkan 5 Bank Besar Lainnya")
+    # rerata tiap indikator 
+    rerata_install_b = np.mean(bb["jumlah_terinstall"])
+    rerata_banyak_rating_b = np.mean(bb["banyak_rating"])
+    rerata_banyak_pengulas_b = np.mean(bb["banyak_pengulas"])
+    rerata_rerata_rating_b = np.mean(bb["rerata_rating"])
+
+    # fungsi background rerata install
+    def install_b(val):
+        color = '#D3F6EC' if val>rerata_install_b else 'white'
+        return f'background-color: {color}'
+    # fungsi background rerata banyak rating
+    def perating_b(val):
+        color = '#A8E8D1' if val>rerata_banyak_rating_b else 'white'
+        return f'background-color: {color}'
+    # fungsi background rerata banyak rating
+    def pengulas_b(val):
+        color = '#B4F3E2' if val>rerata_banyak_pengulas_b else 'white'
+        return f'background-color: {color}'
+    # fungsi background rerata rating
+    def rating_b(val):
+        color = '#C5F5F0' if val>=rerata_rerata_rating_b else 'white'
+        return f'background-color: {color}'
+    
+    besar = bb.style.applymap(install_b, subset=['jumlah_terinstall'])
+    besar = besar.applymap(perating_b, subset=['banyak_rating'])
+    besar = besar.applymap(pengulas_b, subset=['banyak_pengulas'])
+    besar = besar.applymap(rating_b, subset=['rerata_rating'])
+    tabel, tr = st.columns((4, 1))
+    with tabel:
+        st.dataframe(besar)
+        st.write(":red[Note]: Cell dengan Highlight adalah Cell dengan Nilai Diatas Rata-rata Nilai Kolom.")
+    with tr:
+        st.write("Top Bank berdasar Indikator")
+        bri = Image.open("image/bri.png")
+        st.image(bri)
+    ### Bank Syariah 
+    st.subheader("Ulasan BSI dibandingkan 5 Bank Syariah Lainnya")
+    # rerata tiap indikator 
+    rerata_install_s = np.mean(bs["jumlah_terinstall"])
+    rerata_banyak_rating_s = np.mean(bs["banyak_rating"])
+    rerata_banyak_pengulas_s = np.mean(bs["banyak_pengulas"])
+    rerata_rerata_rating_s = np.mean(bs["rerata_rating"])
+
+    # fungsi background rerata install
+    def install_s(val):
+        color = '#D3F6EC' if val>rerata_install_s else 'white'
+        return f'background-color: {color}'
+    # fungsi background rerata banyak rating
+    def perating_s(val):
+        color = '#A8E8D1' if val>rerata_banyak_rating_s else 'white'
+        return f'background-color: {color}'
+    # fungsi background rerata banyak rating
+    def pengulas_s(val):
+        color = '#B4F3E2' if val>rerata_banyak_pengulas_s else 'white'
+        return f'background-color: {color}'
+    # fungsi background rerata rating
+    def rating_s(val):
+        color = '#C5F5F0' if val>=rerata_rerata_rating_s else 'white'
+        return f'background-color: {color}'
+    
+    syariah = bs.style.applymap(install_s, subset=['jumlah_terinstall'])
+    syariah = syariah.applymap(perating_s, subset=['banyak_rating'])
+    syariah = syariah.applymap(pengulas_s, subset=['banyak_pengulas'])
+    syariah = syariah.applymap(rating_s, subset=['rerata_rating'])
+    tabel, tr = st.columns((4, 1))
+    with tabel:
+        st.dataframe(syariah)
+        st.write(":red[Note]: Cell dengan Highlight adalah Cell dengan Nilai Diatas Rata-rata Nilai Kolom.")
+    with tr:
+        st.write("Top Bank berdasar Indikator")
+        st.image(logo)
+with tab3:
     ## load model dan preprocessing dan sebagainya 
     # load model
     model = keras.models.load_model("sentiment_5.h5")
@@ -612,7 +724,7 @@ with tab2:
                     mime="text/csv",
                 )
 
-with tab3:
+with tab4:
     with st.container():
         text_column, mid, image_column = st.columns((1,0.2,0.5))
         with text_column:
@@ -668,6 +780,7 @@ with tab3:
             st.markdown("""
                         - BSI Data Analytics Departement (lead by Bapak Denny Setiawan), Specially for Digital Team (lead by Mbak Ida)\n
                         - [Google Play Scraper](https://github.com/JoMingyu/google-play-scraper)
+                        - [Zenrows](https://www.zenrows.com/)
                         """)
           
             st.subheader("Info Update", divider='red')
