@@ -240,7 +240,7 @@ with tab1:
     st.header("WordCloud dan Perkembangan Setiap Topik")
     cola, colb, colc = st.columns((2, 1, 1))
     with cola:
-        maks_kata = st.select_slider("Jumlah Maksimum Kata", options=range(1, 200), value=25)
+        maks_kata = st.select_slider("Jumlah Maksimum Kata", options=range(1, 100), value=25)
     with colb:
         lowerOrUpper = st.selectbox("Kapitalisasi Kata", options=["Lower", "Upper"])
     with colc:
@@ -260,5 +260,8 @@ with tab1:
     detail_topik("Transaksi Nasabah pada BSI Mobile", 0, background, lowerOrUpper, maks_kata)
     # Aplikasi Berguna tapi Ribet
     detail_topik("Aplikasi Berguna tapi Ribet", 4, background, lowerOrUpper, maks_kata)
-       
+
+with tab2:
+    st.write("Apabila diperlukan.")
+
 st.markdown("*Copyright © 2024 Ludy Hasby Aulia*")
