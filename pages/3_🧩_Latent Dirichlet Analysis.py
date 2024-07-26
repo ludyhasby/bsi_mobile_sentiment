@@ -1,5 +1,4 @@
 import streamlit as st
-import pickle
 import plotly.express as px
 from PIL import Image
 import pandas as pd
@@ -26,15 +25,16 @@ def detail_topik(topik, nomorTopik, bg, lowerOrUpper, maksWord):
         st.write(" ")
         st.write(" ")
         st.write(" ")
-        word_cloud = [cv.get_feature_names_out()[i] for i in lda.components_[nomorTopik].argsort()[-maksWord:]]
-        text = " ".join(str(topik) for topik in word_cloud)
+        word_df = lda_cv[lda_cv["topic_no"]==nomorTopik][['decoding_kata', 'kontribusi']].head(maksWord)
+        word_freq = dict(zip(word_df['decoding_kata'], word_df['kontribusi']))
+        # text = " ".join(str(topik) for topik in word_cloud)
         if lowerOrUpper == "Lower":
-            word_string = text.lower()
+            word_freq = {k.lower(): v for k, v in word_freq.items()}
         else:
-            word_string = text.upper()
-        wc = WordCloud(background_color=bg,
-                       max_font_size= 300,  width=1600, height=800, max_words=maksWord)
-        wc.generate(word_string)
+            word_freq = {k.upper(): v for k, v in word_freq.items()}
+
+        wc = WordCloud(background_color=bg, max_font_size= 300,  width=1600, 
+                       height=800, max_words=maksWord).generate_from_frequencies(word_freq)
         st.image(wc.to_array(), use_column_width=True)
    
     with kolom2:
@@ -74,8 +74,7 @@ def cariKata(kolom_list, key):
 
 # data preparation 
 logo = Image.open("bsi.png")
-lda = pd.read_pickle("lda_model.pkl")
-cv = pd.read_pickle("cv.pkl")
+lda_cv = pd.read_csv("lda_topics.csv")
 
 # with open('lda_model.pkl', 'rb') as handle:
 #     lda = pickle.load(handle)
