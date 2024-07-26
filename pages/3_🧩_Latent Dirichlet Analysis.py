@@ -7,6 +7,12 @@ from datetime import timedelta, date
 from wordcloud import WordCloud
 from streamlit_option_menu import option_menu
 
+# page config
+st.set_page_config(
+    page_icon="🧩",
+    page_title="Latent Dirichlet Analysis BSI Mobile", 
+    layout = "wide"
+)
 ## fungsi penting 
 # highlight dataframe
 def highlight_sentiment(s):
@@ -95,12 +101,7 @@ df = df[df["tanggal"] >= bsi_date]
 df["tahun"] = df["datetime_baru"].dt.year
 minDate = min(df["tanggal"])
 maksDate = max(df["tanggal"])
-# page config
-st.set_page_config(
-    page_icon="🧩",
-    page_title="Latent Dirichlet Analysis BSI Mobile", 
-    layout = "wide"
-)
+
 def social_icons(width=24, height=24, **kwargs):
         icon_template = '''
         <a href="{url}" target="_blank" style="margin-right: 20px;">
@@ -142,22 +143,22 @@ with st.sidebar:
                         "Outline",
                         ["Distribusi Topik yang Sering Muncul", 
                          "Perkembangan Topik pada Ulasan BSI Mobile", 
-                         "Detail Topik: Transaksi Nasabah pada BSI Mobile", 
-                         "Detail Topik: BSI Mobile Keren dan Lancar Digunakan", 
+                         "Detail Topik: Fitur Lengkap dan Memudahkan Transaksi",
                          "Detail Topik: Kenyamanan pada BSI Mobile",
                          "Detail Topik: BSI Mobile Susah digunakan dan Sering Eror", 
-                         "Detail Topik: Aplikasi Berguna tapi Ribet", 
+                         "Detail Topik: BSI Mobile Keren dan Lancar Digunakan",
                          "Detail Topik: Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)", 
-                         "Detail Topik: Fitur Lengkap dan Memudahkan Transaksi"],
+                         "Detail Topik: Transaksi Nasabah pada BSI Mobile", 
+                         "Detail Topik: Aplikasi Berguna tapi Ribet"],
                         icons =    ['bi bi-pie-chart', 
                                     'bi bi-bar-chart-line-fill', 
-                                    'bi bi-cash-coin',
-                                    'bi bi-emoji-sunglasses', 
+                                    'bi bi-emoji-laughing',
                                     'bi bi-check-circle', 
                                     'bi bi-bug', 
-                                    'bi bi-gear-wide-connected', 
+                                    'bi bi-emoji-sunglasses', 
                                     'bi bi-exclamation-diamond-fill',
-                                    'bi bi-emoji-laughing'],
+                                    'bi bi-cash-coin',
+                                    'bi bi-gear-wide-connected'],
                         menu_icon="mortadboard",
                         default_index=0,
                         styles={
@@ -251,19 +252,19 @@ with tab1:
     with colc:
         background = st.color_picker("Background Warna", value="#C5F5F0")
 
-    # Transaksi Nasabah pada BSI Mobile
-    detail_topik("Transaksi Nasabah pada BSI Mobile", 0, background, lowerOrUpper, maks_kata)
-    # BSI Mobile Keren dan Lancar Digunakan
-    detail_topik("BSI Mobile Keren dan Lancar Digunakan", 1, background, lowerOrUpper, maks_kata)
+    # Fitur Lengkap dan Memudahkan Transaksi
+    detail_topik("Fitur Lengkap dan Memudahkan Transaksi", 6, background, lowerOrUpper, maks_kata)
     # Kenyamanan pada BSI Mobile
     detail_topik("Kenyamanan pada BSI Mobile", 2, background, lowerOrUpper, maks_kata)
     # BSI Mobile Susah digunakan dan Sering Eror
     detail_topik("BSI Mobile Susah digunakan dan Sering Eror", 3, background, lowerOrUpper, maks_kata)
-    # Aplikasi Berguna tapi Ribet
-    detail_topik("Aplikasi Berguna tapi Ribet", 4, background, lowerOrUpper, maks_kata)
+    # BSI Mobile Keren dan Lancar Digunakan
+    detail_topik("BSI Mobile Keren dan Lancar Digunakan", 1, background, lowerOrUpper, maks_kata)
     # Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)
     detail_topik("Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)", 5, background, lowerOrUpper, maks_kata)
-    # Fitur Lengkap dan Memudahkan Transaksi
-    detail_topik("Fitur Lengkap dan Memudahkan Transaksi", 6, background, lowerOrUpper, maks_kata)
-   
+    # Transaksi Nasabah pada BSI Mobile
+    detail_topik("Transaksi Nasabah pada BSI Mobile", 0, background, lowerOrUpper, maks_kata)
+    # Aplikasi Berguna tapi Ribet
+    detail_topik("Aplikasi Berguna tapi Ribet", 4, background, lowerOrUpper, maks_kata)
+       
 st.markdown("*Copyright © 2024 Ludy Hasby Aulia*")
