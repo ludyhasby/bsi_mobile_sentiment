@@ -5,11 +5,8 @@ from PIL import Image
 import plotly.express as px
 import altair as alt
 from datetime import date, timedelta
-from wordcloud import WordCloud, ImageColorGenerator
+from wordcloud import WordCloud
 from streamlit_option_menu import option_menu
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from stqdm import stqdm
-from collections import Counter
 # import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
 import json
@@ -18,7 +15,7 @@ import json
 # data preparation 
 logo = Image.open("bsi.png")
 df = pd.read_csv("dataset_siap_eksplorasi.csv")
-df["datetime_baru"] = pd.to_datetime(df["datetime_baru"])
+df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
 df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
 df["jam"] = df["datetime_baru"].dt.hour
 df["bulan"] = df["datetime_baru"].dt.month
@@ -346,6 +343,7 @@ with tab1:
                       color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
         fig.update_xaxes(tickangle=90)
         st.plotly_chart(fig, theme="streamlit")
+        st.write("Waktu Indonesia Barat UTC+7")
     with col2:
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Hourly Sentiment Chart]</span>', unsafe_allow_html=True)
         st.write("Reviewer cenderung memberikan ulasan pada pagi hingga siang hari dengan titik tertinggi pada jam 4 pagi. Dimana saat itu, didominasi dengan ulasan ber-sentiment positif. Sedangkan pada sentiment negatif, reviewer memberikan ulasannya kebanyakan pada pukul 2-12 siang. Memungkinkan BSI Mobile memiliki banyak masalah saat digunakan pada rentang waktu tersebut")

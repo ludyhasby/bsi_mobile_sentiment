@@ -81,7 +81,7 @@ df1["sumber"] = "ps"
 df2 = pd.read_csv("ios_processing.csv")
 df2["sumber"] = "as"
 df = pd.concat([df1, df2])
-df["datetime_baru"] = pd.to_datetime(df["datetime_baru"])
+df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
 df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
 df["tahun_bulan_01"] = pd.to_datetime(df["tahun_bulan"].astype(str) + "-01")
 df["jam"] = df["datetime_baru"].dt.hour
