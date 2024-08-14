@@ -15,7 +15,7 @@ import json
 logo = Image.open("bsi.png")
 df = pd.read_csv("ios_processing.csv")
 # df.columns = [""]
-df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
+# df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
 df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
 df["jam"] = df["datetime_baru"].dt.hour
 df["bulan"] = df["datetime_baru"].dt.month
@@ -380,7 +380,7 @@ with tab1:
                       color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
         fig.update_xaxes(tickangle=90)
         st.plotly_chart(fig, theme="streamlit")
-        st.write("Waktu Indonesia Barat UTC+7")
+        # st.write("Waktu Indonesia Barat UTC+7")
     with col2:
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Hourly Sentiment Chart]</span>', unsafe_allow_html=True)
         st.write("Reviewer cenderung memberikan ulasan pada pagi hingga siang hari dengan titik tertinggi pada jam 4 pagi. Dimana saat itu, didominasi dengan ulasan ber-sentiment positif. Sedangkan pada sentiment negatif, reviewer juga memberikan ulasannya kebanyakan pada pukul 2-8 pagi. Memungkinkan BSI Mobile memiliki banyak masalah saat digunakan pada rentang waktu tersebut")

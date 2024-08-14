@@ -14,9 +14,20 @@ import json
 
 # data preparation 
 logo = Image.open("bsi.png")
-df = pd.read_csv("dataset_siap_eksplorasi.csv")
-df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
-df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
+df1 = pd.read_csv("dataset_siap_eksplorasi.csv")
+def load_data(id, sheet_name)-> pd.DataFrame:
+  url = f'https://docs.google.com/spreadsheets/d/{id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+  return pd.read_csv(url, parse_dates=[0, 1, 2, 3, 4], infer_datetime_format=True)
+
+id = "1oTSMV4_VAoZEvU7-bHJLoKsg-mSGpFhxyFQLSOjl3VI"
+sheet_name = "temp"
+df1_tambahan = load_data(id, sheet_name)
+df1_tambahan["datetime_baru"]= pd.to_datetime(df1_tambahan["datetime_baru"])
+df1_tambahan["score"] = df1_tambahan["score"].astype(int)
+df = pd.concat([df1, df1_tambahan])
+
+# df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
+df["prob_keyakinan"] = df["prob_keyakinan"].astype(float)
 df["jam"] = df["datetime_baru"].dt.hour
 df["bulan"] = df["datetime_baru"].dt.month
 df["date_day"] = df["datetime_baru"].dt.day
@@ -25,6 +36,8 @@ df["tanggal"] = df["datetime_baru"].dt.date
 bsi_date = date.fromisoformat('2021-02-01')
 df = df[df["tanggal"] >= bsi_date]
 df["tahun"] = df["datetime_baru"].dt.year
+df["tahun_bulan"] = df["tahun"].astype(str) + "-" + df["bulan"].astype(str)
+df["tahun_bulan_01"] = df["tahun_bulan"] + "-01"
 minDate = min(df["tanggal"])
 maksDate = max(df["tanggal"])
 
@@ -188,9 +201,7 @@ with tab1:
         y = 'jumlah'
     )
     st.altair_chart((bar), use_container_width=True) # legenda rating 
-
-    df["tahun_bulan_01"] = pd.to_datetime(df["tahun_bulan"].astype(str) + "-01")
-
+    
     # score average 
     st.subheader("Distribusi Rerata Rating BSI Mobile dalam Periode")
     coba = df.groupby(['tahun_bulan_01'])['score'].mean().reset_index()
@@ -343,7 +354,7 @@ with tab1:
                       color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
         fig.update_xaxes(tickangle=90)
         st.plotly_chart(fig, theme="streamlit")
-        st.write("Waktu Indonesia Barat UTC+7")
+        # st.write("Waktu Indonesia Barat UTC+7")
     with col2:
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Hourly Sentiment Chart]</span>', unsafe_allow_html=True)
         st.write("Reviewer cenderung memberikan ulasan pada pagi hingga siang hari dengan titik tertinggi pada jam 4 pagi. Dimana saat itu, didominasi dengan ulasan ber-sentiment positif. Sedangkan pada sentiment negatif, reviewer memberikan ulasannya kebanyakan pada pukul 2-12 siang. Memungkinkan BSI Mobile memiliki banyak masalah saat digunakan pada rentang waktu tersebut")

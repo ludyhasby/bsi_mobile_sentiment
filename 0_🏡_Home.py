@@ -12,38 +12,34 @@ import pickle
 import re
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from stqdm import stqdm
-from collections import Counter
+from google_play_scraper import Sort, reviews
+from streamlit_gsheets import GSheetsConnection
+
 # import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
 import json
 
-# data preparation 
-logo = Image.open("bsi.png")
-
-df1 = pd.read_csv("dataset_siap_eksplorasi.csv")
-df1["sumber"] = "ps"
-df2 = pd.read_csv("ios_processing.csv")
-df2["sumber"] = "as"
-df = pd.concat([df1, df2])
-df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
-df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
-df["jam"] = df["datetime_baru"].dt.hour
-df["bulan"] = df["datetime_baru"].dt.month
-df["date_day"] = df["datetime_baru"].dt.day
-df["dayNames"] = df["datetime_baru"].dt.day_name()
-df["tanggal"] = df["datetime_baru"].dt.date
-bsi_date = date.fromisoformat('2021-02-01')
-df = df[df["tanggal"] >= bsi_date]
-
-df["tahun"] = df["datetime_baru"].dt.year
-minDate = min(df["tanggal"])
-maksDate = max(df["tanggal"])
 # page config
 st.set_page_config(
     page_icon="💳",
     page_title="Sentiment BSI Mobile", 
     layout = "wide"
 )
+# data preparation 
+logo = Image.open("bsi.png")
+
+def load_data(id, sheet_name)-> pd.DataFrame:
+  url = f'https://docs.google.com/spreadsheets/d/{id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+  return pd.read_csv(url, parse_dates=[0, 1, 2, 3, 4], infer_datetime_format=True)
+
+id = "1oTSMV4_VAoZEvU7-bHJLoKsg-mSGpFhxyFQLSOjl3VI"
+sheet_name = "temp"
+
+df1_tambahan = load_data(id, sheet_name)
+df1_tambahan["datetime_baru"]= pd.to_datetime(df1_tambahan["datetime_baru"])
+df1_tambahan["score"] = df1_tambahan["score"].astype(int)
+maksDate = max(df1_tambahan["datetime_baru"].dt.date)
+
 # Use the following line to include your style.css file
 # st.markdown('<style>' + open('style.css').read() + '</style>', unsafe_allow_html=True)
 def social_icons(width=24, height=24, **kwargs):
@@ -67,14 +63,178 @@ def social_icons(width=24, height=24, **kwargs):
         return icons_html
 #####################
 
+### buat prediksi sentiment 
+# tokenizer preprocessing
+with open('tokenizer.pickle', 'rb') as handle:
+    tokenizer = pickle.load(handle)
+    
+max_length = 120
+trunc_type='post'
+pad_type='post'
+oov_tok = "<OOV>"
+
+# emot 
+# id_emot = '1FktEGuOTxyPC--kfSzxexnQBoStvTtkaxzxFi6I1gvA'
+# sheet_name = 'master_emoji'
+emoticon = pd.read_csv("master_emoji.csv")
+emot_f= emoticon[["Emoji", "tag_indo", "Sentiment"]].copy()
+def replace_emot(teks, emot_f):
+    for j, emoticon in enumerate(emot_f["Emoji"]):
+        tag = emot_f["tag_indo"][j]
+        teks = teks.replace(emoticon, f" {tag}")
+    return teks
+
+# slang normalize 
+slang_dict = pd.read_csv('new_kamusalay.csv', encoding='latin-1', header=None)
+slang_dict = slang_dict.rename(columns={0: 'original',
+                                    1: 'replacement'})
+def normalize_slang(text):
+    slang_dict_map = dict(zip(slang_dict['original'], slang_dict['replacement']))
+    return ' '.join([slang_dict_map[word] if word in slang_dict_map else word for word in text.split(' ')])
+
+# stop_words preprocessing 
+STOP_PREP = []
+with open("stop_preprocessing.txt", "r") as infile:
+    STOP_PREP = infile.read().splitlines()
+
+# main preprocess 
+def preprocessing(text):
+    text = replace_emot(text, emot_f)
+    text = re.sub(r'[^\w\s]', ' ', text)
+    text = text.lower()
+    text = re.sub(r'username', '', text)
+    text = normalize_slang(text)
+
+    # Mengubah string menjadi list kata
+    words = text.split()
+    filtered_words = [word for word in words if word.lower() not in STOP_PREP]
+    text = ' '.join(filtered_words)
+    text = re.sub(r"\d+", "", text)
+    text = re.sub(r'[ ]+', ' ', text)
+
+    return text.strip()
+
+# preprocessing 
+def teks_to_pad(teks):
+    teks_seq = tokenizer.texts_to_sequences(teks)
+    teks_pad = pad_sequences(teks_seq, maxlen=max_length, truncating=trunc_type, padding=pad_type)
+    return teks_pad
+
 text1, pict1 = st.columns((4,2))
 with text1:
-    st.title("Analisis Sentiment Ulasan BSI Mobile")
+    st.title("Analisis Sentiment Ulasan BSI Mobile [Daily Batching]")
     st.subheader("Also as Sentiment Analysis Tools")
-    st.write(f"(Update {maksDate})")
+    st.write(f"(Previous Update at {maksDate})")
 with pict1:
     st.image(logo)
     st.write("Ludy Hasby Aulia - nMLE")
+
+# batas atas scrapping eksluksif 
+end_date = date.today()
+# batas bawah scrapping ekslusif 
+start_date = maksDate
+diff_days = (end_date - start_date).days - 1
+counter_scrapper = diff_days*100
+
+if diff_days > 1:
+    with st.expander("Update Data Dulu ya, sudah waktunya 😁"):
+        st.write("Srapping on Progress")
+        review, token = reviews(
+            'com.bsm.activity2',
+            lang='id',
+            country='id',
+            sort = Sort.NEWEST,
+            filter_score_with=None,
+            count=counter_scrapper
+        )
+        review_df = pd.DataFrame(review)
+        st.write("Scrapping Done..")
+        review_df["datetime_baru"] = pd.to_datetime(review_df["at"])
+        review_df = review_df[(review_df["datetime_baru"].dt.date > start_date) & (review_df["datetime_baru"].dt.date < end_date)]
+        date_scrap_bellow = min(review_df["datetime_baru"].dt.date)
+
+        if date_scrap_bellow != (start_date + timedelta(days=1)):
+            st.write("Scrapping 2 on Progress")
+            review, token = reviews(
+                'com.bsm.activity2',
+                lang='id',
+                country='id',
+                sort = Sort.NEWEST,
+                filter_score_with=None,
+                count=counter_scrapper*2
+                
+            )
+            review_df = pd.DataFrame(review)
+            st.write("Scrapping 2 Done")
+            review_df["datetime_baru"] = pd.to_datetime(review_df["at"])
+            review_df = review_df[(review_df["datetime_baru"].dt.date > start_date) & (review_df["datetime_baru"].dt.date < end_date)]
+
+        model = keras.models.load_model("sentiment_5.h5")
+        # emot 
+        emoticon = pd.read_csv("master_emoji.csv")
+        emot_f= emoticon[["Emoji", "tag_indo", "Sentiment"]].copy()
+
+        # slang normalize 
+        slang_dict = pd.read_csv('new_kamusalay.csv', encoding='latin-1', header=None)
+        slang_dict = slang_dict.rename(columns={0: 'original',
+                                            1: 'replacement'})
+        # stop_words preprocessing 
+        STOP_PREP = []
+        with open("stop_preprocessing.txt", "r") as infile:
+            STOP_PREP = infile.read().splitlines()
+
+        st.write("Preprocessing on Progress..")
+        stqdm.pandas()
+        review_df["Preprocess_Sentences"] = review_df["content"].progress_apply(preprocessing)
+        st.write("Handling Null..")
+        review_df = review_df[review_df["Preprocess_Sentences"].notna()]
+        review_df["sentences_wordCloud"] = review_df["Preprocess_Sentences"]
+        preprocess_sentences = review_df["Preprocess_Sentences"].tolist()
+        st.write("Padding on Progress..")
+        padding_sentences = teks_to_pad(preprocess_sentences)
+        st.write("Prediksi dimulai..")
+        result = model.predict(padding_sentences)
+        review_df["prob_keyakinan"] = result
+        review_df["sentiment"] = ["positive" if i >= 0.5 else "negative" for i in result]
+        st.write("All Data Have Been Succeed Processed..")
+
+        review_df = review_df[["content", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]]
+        review_df.columns = ["Sentences", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]
+        review_df["datetime_baru"] = review_df["datetime_baru"].astype(str)
+        url = "https://docs.google.com/spreadsheets/d/1oTSMV4_VAoZEvU7-bHJLoKsg-mSGpFhxyFQLSOjl3VI"
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        conn.read(spreadsheet=url, worksheet="temp", usecols=list(range(7)))
+        data = pd.concat([df1_tambahan, review_df])
+        conn.update(worksheet="temp", data=data)
+        st.write("Append To Database Succcess !")
+        df1_tambahan = load_data(id, sheet_name)
+        df1_tambahan["datetime_baru"]= pd.to_datetime(df1_tambahan["datetime_baru"])
+        df1_tambahan["score"] = df1_tambahan["score"].astype(int)
+ 
+df11 = pd.read_csv("dataset_siap_eksplorasi.csv")
+df11["datetime_baru"] = pd.to_datetime(df11["datetime_baru"])
+df1 = pd.concat([df11, df1_tambahan])
+df1["datetime_baru"] = pd.to_datetime(df1["datetime_baru"])
+df1["sumber"] = "ps"
+df2 = pd.read_csv("ios_processing.csv")
+df2["datetime_baru"] = pd.to_datetime(df2["datetime_baru"])
+df2["sumber"] = "as"
+df = pd.concat([df1, df2])
+# df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
+df["prob_keyakinan"] = df["prob_keyakinan"].astype(float)
+df["jam"] = df["datetime_baru"].dt.hour
+df["bulan"] = df["datetime_baru"].dt.month
+df["date_day"] = df["datetime_baru"].dt.day
+df["dayNames"] = df["datetime_baru"].dt.day_name()
+df["tanggal"] = df["datetime_baru"].dt.date
+bsi_date = date.fromisoformat('2021-02-01')
+df = df[df["tanggal"] >= bsi_date]
+
+df["tahun"] = df["datetime_baru"].dt.year
+df["tahun_bulan"] = df["tahun"].astype(str) + "-" + df["bulan"].astype(str)
+df["tahun_bulan_01"] = df["tahun_bulan"] + "-01"
+minDate = min(df["tanggal"])
+maksDate = max(df["tanggal"])
 
 with st.sidebar:
     # with st.container():
@@ -156,9 +316,7 @@ with tab1:
         rating_selection = st.multiselect("Rating", options=[1, 2, 3, 4, 5], default=[1, 2, 3, 4, 5])
     with kolom3:
         positiveNegative = st.multiselect("Jenis Sentiment", options=["positive", "negative"], default=["positive", "negative"])
-    
     df = df[(df["score"].isin(rating_selection)) & (df["sentiment"].isin(positiveNegative))]
-
     if PERIOD == "2024":
         df = df[df["datetime_baru"].dt.year==2024]
     elif PERIOD == "Minggu Terakhir":
@@ -175,7 +333,6 @@ with tab1:
         df = df[df["bulan"].isin(bulan)]
     elif PERIOD == "All Times":
         PERIOD = PERIOD + " (" + str(minDate) + " - "+ str(maksDate) + ")"
-
 
     ## Metric 
     positive = df[df["sentiment"]=="positive"]
@@ -211,8 +368,6 @@ with tab1:
         y = 'jumlah'
     )
     st.altair_chart((bar), use_container_width=True) # legenda rating 
-
-    df["tahun_bulan_01"] = pd.to_datetime(df["tahun_bulan"].astype(str) + "-01")
 
     # score average 
     st.subheader("Distribusi Rerata Rating BSI Mobile dalam Periode")
@@ -367,7 +522,7 @@ with tab1:
                       color_discrete_map={'positive':'#3EA5A1', 'negative':'#ff0000'})
         fig.update_xaxes(tickangle=90)
         st.plotly_chart(fig, theme="streamlit")
-        st.write("Waktu Indonesia Barat UTC+7")
+        # st.write("Waktu Indonesia Barat UTC+7")
     with col2:
         st.markdown(f'<span style="font-size: 18px;">:green[Insight Hourly Sentiment Chart]</span>', unsafe_allow_html=True)
         st.write("Reviewer cenderung memberikan ulasan pada pagi hingga siang hari dengan titik tertinggi pada jam 4 pagi. Dimana saat itu, didominasi dengan ulasan ber-sentiment positif. Sedangkan pada sentiment negatif, reviewer memberikan ulasannya kebanyakan pada pukul 2-12 siang. Memungkinkan BSI Mobile memiliki banyak masalah saat digunakan pada rentang waktu tersebut")
@@ -618,62 +773,6 @@ with tab3:
     ## load model dan preprocessing dan sebagainya 
     # load model
     model = keras.models.load_model("sentiment_5.h5")
-    # tokenizer preprocessing
-    with open('tokenizer.pickle', 'rb') as handle:
-        tokenizer = pickle.load(handle)
-        
-    max_length = 120
-    trunc_type='post'
-    pad_type='post'
-    oov_tok = "<OOV>"
-
-    # emot 
-    # id_emot = '1FktEGuOTxyPC--kfSzxexnQBoStvTtkaxzxFi6I1gvA'
-    # sheet_name = 'master_emoji'
-    emoticon = pd.read_csv("master_emoji.csv")
-    emot_f= emoticon[["Emoji", "tag_indo", "Sentiment"]].copy()
-    def replace_emot(teks, emot_f):
-        for j, emoticon in enumerate(emot_f["Emoji"]):
-            tag = emot_f["tag_indo"][j]
-            teks = teks.replace(emoticon, f" {tag}")
-        return teks
-
-    # slang normalize 
-    slang_dict = pd.read_csv('new_kamusalay.csv', encoding='latin-1', header=None)
-    slang_dict = slang_dict.rename(columns={0: 'original',
-                                        1: 'replacement'})
-    def normalize_slang(text):
-        slang_dict_map = dict(zip(slang_dict['original'], slang_dict['replacement']))
-        return ' '.join([slang_dict_map[word] if word in slang_dict_map else word for word in text.split(' ')])
-
-    # stop_words preprocessing 
-    STOP_PREP = []
-    with open("stop_preprocessing.txt", "r") as infile:
-        STOP_PREP = infile.read().splitlines()
-    
-    # main preprocess 
-    def preprocessing(text):
-        text = replace_emot(text, emot_f)
-        text = re.sub(r'[^\w\s]', ' ', text)
-        text = text.lower()
-        text = re.sub(r'username', '', text)
-        text = normalize_slang(text)
-
-        # Mengubah string menjadi list kata
-        words = text.split()
-        filtered_words = [word for word in words if word.lower() not in STOP_PREP]
-        text = ' '.join(filtered_words)
-        text = re.sub(r"\d+", "", text)
-        text = re.sub(r'[ ]+', ' ', text)
-
-        return text.strip()
-    
-    # preprocessing 
-    def teks_to_pad(teks):
-        teks_seq = tokenizer.texts_to_sequences(teks)
-        teks_pad = pad_sequences(teks_seq, maxlen=max_length, truncating=trunc_type, padding=pad_type)
-        return teks_pad
-
 
     st.header("Prediksi Sentiment Berdasar Input User")
     st.write("Silahkan Pilih untuk menggunakan Teks atau File data terproses (hasil preprocess)")
@@ -786,7 +885,7 @@ with tab4:
                         """)
           
             st.subheader("Info Update", divider='red')
-            st.write(":red[Next Development]: Topic Generation")
+            st.write(":red[Next Development]: Topic Generation :green[Done], Semi Real Time: green[Done]")
 
             st.write("Let's connect! You may either reach out to me at ludy.hasby@gmail.com or learn me more at [this link](https://ludyhasby.streamlit.app/)")
 
