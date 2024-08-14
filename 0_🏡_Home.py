@@ -133,10 +133,10 @@ with pict1:
 end_date = date.today()
 # batas bawah scrapping ekslusif 
 start_date = maksDate
-diff_days = (end_date - start_date).days - 1
+diff_days = (end_date - start_date).days
 counter_scrapper = diff_days*100
 
-if diff_days > 1:
+if diff_days > 2:
     with st.expander("Update Data Dulu ya, sudah waktunya 😁"):
         st.write("Srapping on Progress")
         review, token = reviews(
