@@ -16,6 +16,7 @@ logo = Image.open("bsi.png")
 df = pd.read_csv("ios_processing.csv")
 # df.columns = [""]
 # df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
+df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) 
 df["tahun_bulan"] = df["datetime_baru"].dt.to_period('M')
 df["jam"] = df["datetime_baru"].dt.hour
 df["bulan"] = df["datetime_baru"].dt.month

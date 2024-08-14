@@ -27,6 +27,7 @@ df1_tambahan["score"] = df1_tambahan["score"].astype(int)
 df = pd.concat([df1, df1_tambahan])
 
 # df["datetime_baru"] = pd.to_datetime(df["datetime_baru"]) + timedelta(hours=7)
+df["datetime_baru"] = pd.to_datetime(df["datetime_baru"])
 df["prob_keyakinan"] = df["prob_keyakinan"].astype(float)
 df["jam"] = df["datetime_baru"].dt.hour
 df["bulan"] = df["datetime_baru"].dt.month
