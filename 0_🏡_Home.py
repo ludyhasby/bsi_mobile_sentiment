@@ -144,7 +144,7 @@ if diff_days >= 2:
         url = "https://docs.google.com/spreadsheets/d/1oTSMV4_VAoZEvU7-bHJLoKsg-mSGpFhxyFQLSOjl3VI"
         conn = st.connection("gsheets", type=GSheetsConnection)
         conn.read(spreadsheet=url, worksheet="temp", usecols=list(range(7)))
-        
+
         st.write("Srapping on Progress")
         review, token = reviews(
             'com.bsm.activity2',
@@ -209,6 +209,7 @@ if diff_days >= 2:
         review_df.columns = ["Sentences", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]
         review_df["datetime_baru"] = review_df["datetime_baru"].astype(str)
         data = pd.concat([df1_tambahan, review_df])
+        data = data.sort_values("datetime_baru", ascending=True)
         conn.update(worksheet="temp", data=data)
         st.write("Append To Database Succcess !")
         df1_tambahan = load_data(id, sheet_name)
