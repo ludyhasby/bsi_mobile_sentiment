@@ -207,9 +207,9 @@ if diff_days >= 2:
 
         review_df = review_df[["content", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]]
         review_df.columns = ["Sentences", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]
-        review_df["datetime_baru"] = review_df["datetime_baru"].astype(str)
         data = pd.concat([df1_tambahan, review_df])
-        data = data.sort_values("datetime_baru", ascending=True)
+        data = data.sort_values("datetime_baru")
+        data["datetime_baru"] = data["datetime_baru"].astype(str)
         conn.update(worksheet="temp", data=data)
         st.write("Append To Database Succcess !")
         df1_tambahan = load_data(id, sheet_name)
