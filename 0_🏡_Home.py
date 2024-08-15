@@ -141,6 +141,10 @@ counter_scrapper = diff_days*100
 
 if diff_days >= 2:
     with st.expander("Update Data Dulu ya, sudah waktunya 😁"):
+        url = "https://docs.google.com/spreadsheets/d/1oTSMV4_VAoZEvU7-bHJLoKsg-mSGpFhxyFQLSOjl3VI"
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        conn.read(spreadsheet=url, worksheet="temp", usecols=list(range(7)))
+        
         st.write("Srapping on Progress")
         review, token = reviews(
             'com.bsm.activity2',
@@ -204,9 +208,6 @@ if diff_days >= 2:
         review_df = review_df[["content", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]]
         review_df.columns = ["Sentences", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]
         review_df["datetime_baru"] = review_df["datetime_baru"].astype(str)
-        url = "https://docs.google.com/spreadsheets/d/1oTSMV4_VAoZEvU7-bHJLoKsg-mSGpFhxyFQLSOjl3VI"
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        conn.read(spreadsheet=url, worksheet="temp", usecols=list(range(7)))
         data = pd.concat([df1_tambahan, review_df])
         conn.update(worksheet="temp", data=data)
         st.write("Append To Database Succcess !")
