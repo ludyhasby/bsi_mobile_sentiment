@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 import plotly.express as px
 import altair as alt
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from wordcloud import WordCloud
 from streamlit_option_menu import option_menu
 import keras
@@ -14,6 +14,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from stqdm import stqdm
 from google_play_scraper import Sort, reviews
 from streamlit_gsheets import GSheetsConnection
+import pytz
 
 # import streamlit_wordcloud as wordcloud
 from numerize.numerize import numerize
@@ -120,23 +121,25 @@ def teks_to_pad(teks):
     teks_pad = pad_sequences(teks_seq, maxlen=max_length, truncating=trunc_type, padding=pad_type)
     return teks_pad
 
+utc_now = datetime.now(pytz.utc)
 text1, pict1 = st.columns((4,2))
 with text1:
     st.title("Analisis Sentiment Ulasan BSI Mobile [Daily Batching]")
     st.subheader("Also as Sentiment Analysis Tools")
     st.write(f"(Previous Update at {maksDate})")
+    st.write(f"Timestamp (UTC+0): {utc_now}")
 with pict1:
     st.image(logo)
     st.write("Ludy Hasby Aulia - nMLE")
 
 # batas atas scrapping eksluksif 
-end_date = date.today()
+end_date = utc_now.date()
 # batas bawah scrapping ekslusif 
 start_date = maksDate
 diff_days = (end_date - start_date).days
 counter_scrapper = diff_days*100
 
-if diff_days > 2:
+if diff_days >= 2:
     with st.expander("Update Data Dulu ya, sudah waktunya 😁"):
         st.write("Srapping on Progress")
         review, token = reviews(
@@ -885,7 +888,7 @@ with tab4:
                         """)
           
             st.subheader("Info Update", divider='red')
-            st.write(":red[Next Development]: Topic Generation :green[Done], Semi Real Time: green[Done]")
+            st.write(":red[Next Development]: Topic Generation :green[Done], Semi Real Time :green[Done]")
 
             st.write("Let's connect! You may either reach out to me at ludy.hasby@gmail.com or learn me more at [this link](https://ludyhasby.streamlit.app/)")
 
