@@ -20,3 +20,6 @@ Merupakan project magang Ludy Hasby di BSI untuk periode 10 Juni - 23 Agustus 20
     9. Force Close
 ## Hyperlink penting 
 - sentimen_5.h5 adalah model NN dengan format tensorflow 
+- Notebook pemodelan LDA 1 yang menghasilkan 7 topik yang umum dibahas oleh pengulas di BSI Mobile dapat diakses di https://colab.research.google.com/drive/1H668jkm8jFWQqkwW1uz8p24E7waLdvLY?usp=sharing
+- Notebook pemodelan LDA 2 yang menghasilkan permasalahan umum yang dihadapi oleh BSI Mobile dapat diakses di https://colab.research.google.com/drive/14-m2ST7iNaHeoYuYXJB1ggn-8FYf-QlZ?usp=sharing
+- Analisis Sentimen Ulasan BSI Mobile dengan Algoritma Artificial Neural Network.pdf adalah laporan proyek analisis sentimen. 
