@@ -291,20 +291,20 @@ with tab1:
     with colc:
         background = st.color_picker("Background Warna", value="#C5F5F0")
 
-    # # Fitur Lengkap dan Memudahkan Transaksi
-    # detail_topik("Fitur Lengkap dan Memudahkan Transaksi", 6, background, lowerOrUpper, maks_kata)
-    # # Kenyamanan pada BSI Mobile
-    # detail_topik("Kenyamanan pada BSI Mobile", 2, background, lowerOrUpper, maks_kata)
-    # # BSI Mobile Susah digunakan dan Sering Eror
-    # detail_topik("BSI Mobile Susah digunakan dan Sering Eror", 3, background, lowerOrUpper, maks_kata)
-    # # BSI Mobile Keren dan Lancar Digunakan
-    # detail_topik("BSI Mobile Keren dan Lancar Digunakan", 1, background, lowerOrUpper, maks_kata)
-    # # Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)
-    # detail_topik("Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)", 5, background, lowerOrUpper, maks_kata)
-    # # Transaksi Nasabah pada BSI Mobile
-    # detail_topik("Transaksi Nasabah pada BSI Mobile", 0, background, lowerOrUpper, maks_kata)
-    # # Aplikasi Berguna tapi Ribet
-    # detail_topik("Aplikasi Berguna tapi Ribet", 4, background, lowerOrUpper, maks_kata)
+    # Fitur Lengkap dan Memudahkan Transaksi
+    detail_topik("Fitur Lengkap dan Memudahkan Transaksi", 6, background, lowerOrUpper, maks_kata)
+    # Kenyamanan pada BSI Mobile
+    detail_topik("Kenyamanan pada BSI Mobile", 2, background, lowerOrUpper, maks_kata)
+    # BSI Mobile Susah digunakan dan Sering Eror
+    detail_topik("BSI Mobile Susah digunakan dan Sering Eror", 3, background, lowerOrUpper, maks_kata)
+    # BSI Mobile Keren dan Lancar Digunakan
+    detail_topik("BSI Mobile Keren dan Lancar Digunakan", 1, background, lowerOrUpper, maks_kata)
+    # Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)
+    detail_topik("Permasalahan pada BSI Mobile (Kode Aktivasi, Rekening)", 5, background, lowerOrUpper, maks_kata)
+    # Transaksi Nasabah pada BSI Mobile
+    detail_topik("Transaksi Nasabah pada BSI Mobile", 0, background, lowerOrUpper, maks_kata)
+    # Aplikasi Berguna tapi Ribet
+    detail_topik("Aplikasi Berguna tapi Ribet", 4, background, lowerOrUpper, maks_kata)
 
 with tab2:
     st.title("Permasalahan Umum pada BSI Mobile")
@@ -354,7 +354,7 @@ with tab2:
         rentang_waktu = st.selectbox(label="Rentang Waktu", options=["Bulanan", "Harian"], index=0)
     with k3:
         banyak_contoh_data = st.number_input("Banyak contoh data untuk ditampilkan", value=15)
-    penampilan_gangguan("Tidak Bisa Login", rentang_waktu, banyak_contoh_data)
+    penampilan_gangguan(jenis_gangguan, rentang_waktu, banyak_contoh_data)
 
 
 
