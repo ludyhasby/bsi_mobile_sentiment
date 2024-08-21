@@ -39,6 +39,7 @@ sheet_name = "temp"
 df1_tambahan = load_data(id, sheet_name)
 df1_tambahan["datetime_baru"]= pd.to_datetime(df1_tambahan["datetime_baru"])
 df1_tambahan["score"] = df1_tambahan["score"].astype(int)
+df1_tambahan["prob_keyakinan"] = df1_tambahan["prob_keyakinan"].astype(float)
 maksDate = max(df1_tambahan["datetime_baru"].dt.date)
 
 # Use the following line to include your style.css file
@@ -208,6 +209,8 @@ if diff_days >= 2:
 
             review_df = review_df[["content", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]]
             review_df.columns = ["Sentences", "score", "sentences_wordCloud", "Preprocess_Sentences", "prob_keyakinan", "sentiment", "datetime_baru"]
+            review_df["score"] = review_df["score"].astype(int)
+            review_df["prob_keyakinan"] = review_df["prob_keyakinan"].astype(float)
             data = pd.concat([df1_tambahan, review_df])
             # karena tadi diambil data sehari sebelum data yang sudah ada di database, akan di drop yang sama (hampir dipastikan ada duplikat)
             data = data.drop_duplicates(keep=False)
